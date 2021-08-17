@@ -82,11 +82,14 @@ def damageRatio(myIndex, match_detail):
 def statsLastX(my_region1, my_matches1, gameCount, userName):
     totalCs = 0
     kills = 0
-    assists = 0
     deaths = 0
-    wins = 0
-    losses = 0
+    assists = 0
+    wins = 0  # win
+    losses = 0  # gameCount - wins
     damageRatioChamps = 0
+    controlWards = 0  # visionWardsBoughtInGame
+    visionScore = 0  # visionScore
+
     for x in range(gameCount):
         last_match = my_matches1['matches'][x]
         match_detail = lol_watcher.match.by_id(my_region, last_match['gameId'])
@@ -103,17 +106,46 @@ def statsLastX(my_region1, my_matches1, gameCount, userName):
             (match_detail['participantIdentities'][9]['player']['summonerName']).lower().replace(" ", ""): 9,
         }
         myIndex = allSummoners[userName]
-        damageRatioChamps += damageRatio(myIndex, match_detail)
+
         temp = match_detail['participants'][myIndex]['stats']['totalMinionsKilled']
-        # print(match_detail['participants'][myIndex]['stats'])
         totalCs += temp
+        kills += match_detail['participants'][myIndex]['stats']['kills']
+        deaths += match_detail['participants'][myIndex]['stats']['deaths']
+        assists += match_detail['participants'][myIndex]['stats']['assists']
+        if match_detail['participants'][myIndex]['stats']['win']:
+            wins += 1
+        else:
+            losses += 1
+        controlWards += match_detail['participants'][myIndex]['stats']['visionWardsBoughtInGame']
+        visionScore += match_detail['participants'][myIndex]['stats']['visionScore']
+        damageRatioChamps += damageRatio(myIndex, match_detail)
+
+    totalCs /= gameCount
+    kills /= gameCount
+    assists /= gameCount
+    deaths /= gameCount
+    wins /= gameCount
+    losses /= gameCount
     damageRatioChamps /= gameCount
-    print(damageRatioChamps)
-    return totalCs / gameCount
+    controlWards /= gameCount
+    visionScore /= gameCount
+    stats = {
+        ('damageRatioChampsX'): damageRatioChamps,
+        ('totalCsX'): totalCs,
+        ('killsX'): kills,
+        ('assistsX'): assists,
+        ('deathsX'): deaths,
+        ('winsX'): wins,
+        ('lossesX'): losses,
+        ('controlWardsX'): controlWards,
+        ('visionScoreX'): visionScore
+    }
+    return stats
 
 
-my_region = getRegion()
 name = getSummoner()
+my_region = getRegion()
+
 me = lol_watcher.summoner.by_name(my_region, name)
 
 my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
@@ -122,5 +154,18 @@ my_matches = lol_watcher.match.matchlist_by_account(my_region, me['accountId'])
 
 
 #csd20 = csPerMinLast10(my_region, my_matches, 1, name)
-csd20 = statsLastX(my_region, my_matches, 20, name)
-print(csd20)
+getInput = input("How many games would you like to analyze?")
+while(getInput.isdigit() == False):
+    getInput = input("Please enter a number")
+csd20 = statsLastX(my_region, my_matches, int(getInput), name)
+# while(getInput != "quit"):
+print("Average stats per game for the last", getInput, "games:")
+print("damage ratio:", round(csd20['damageRatioChampsX'], 3), "%")
+print("Minions Killed:", csd20['totalCsX'])
+print("Kills:", csd20['killsX'])
+print("Deaths:", csd20['deathsX'])
+print("Assists:", csd20['assistsX'])
+print("Wins:", csd20['winsX'])
+print("Losses:", csd20['lossesX'])
+print("Control Wards bought:", csd20['controlWardsX'])
+print("Vision Score:", csd20['visionScoreX'])
