@@ -1,6 +1,6 @@
 from riotwatcher import LolWatcher, ApiError
 
-lol_watcher = LolWatcher('RGAPI-9fe74b90-c36e-45d0-98c8-96513b02d593')
+lol_watcher = LolWatcher('RGAPI-2cc993e2-7e8c-4790-9d4f-4bc94df0f256')
 
 
 def getSummoner():
@@ -89,7 +89,7 @@ def statsLastX(my_region1, my_matches1, gameCount, userName):
     damageRatioChamps = 0
     controlWards = 0  # visionWardsBoughtInGame
     visionScore = 0  # visionScore
-
+    gameDuration = 0
     for x in range(gameCount):
         last_match = my_matches1['matches'][x]
         match_detail = lol_watcher.match.by_id(my_region, last_match['gameId'])
@@ -107,8 +107,9 @@ def statsLastX(my_region1, my_matches1, gameCount, userName):
         }
         myIndex = allSummoners[userName]
 
-        temp = match_detail['participants'][myIndex]['stats']['totalMinionsKilled']
+        temp = match_detail['participants'][myIndex]['stats']['neutralMinionsKilled']
         totalCs += temp
+        totalCs += match_detail['participants'][myIndex]['stats']['totalMinionsKilled']
         kills += match_detail['participants'][myIndex]['stats']['kills']
         deaths += match_detail['participants'][myIndex]['stats']['deaths']
         assists += match_detail['participants'][myIndex]['stats']['assists']
@@ -119,6 +120,7 @@ def statsLastX(my_region1, my_matches1, gameCount, userName):
         controlWards += match_detail['participants'][myIndex]['stats']['visionWardsBoughtInGame']
         visionScore += match_detail['participants'][myIndex]['stats']['visionScore']
         damageRatioChamps += damageRatio(myIndex, match_detail)
+        gameDuration += int(match_detail['gameDuration'])/60
 
     totalCs /= gameCount
     kills /= gameCount
@@ -129,43 +131,55 @@ def statsLastX(my_region1, my_matches1, gameCount, userName):
     damageRatioChamps /= gameCount
     controlWards /= gameCount
     visionScore /= gameCount
+    gameDuration /= gameCount
     stats = {
-        ('damageRatioChampsX'): damageRatioChamps,
-        ('totalCsX'): totalCs,
-        ('killsX'): kills,
-        ('assistsX'): assists,
-        ('deathsX'): deaths,
-        ('winsX'): wins,
-        ('lossesX'): losses,
-        ('controlWardsX'): controlWards,
-        ('visionScoreX'): visionScore
+        ('damageRatioChampsX'): round(damageRatioChamps, 3),
+        ('totalCsX'): round(totalCs, 3),
+        ('killsX'): round(kills, 3),
+        ('assistsX'): round(assists, 3),
+        ('deathsX'): round(deaths, 3),
+        ('winsX'): round(wins, 3),
+        ('lossesX'): round(losses, 3),
+        ('controlWardsX'): round(controlWards, 3),
+        ('visionScoreX'): round(visionScore, 3),
+        ('gameDurationX'): round(gameDuration, 3)
     }
     return stats
+
+
+def printInfo(stats):
+    print("Average stats for", name, "per game for the last", getInput, "games:")
+    print("damage ratio: ", round(stats['damageRatioChampsX'], 3), "%", sep="")
+    print("Minions Killed:", stats['totalCsX'])
+    print("Kills:", stats['killsX'])
+    print("Deaths:", stats['deathsX'])
+    print("Assists:", stats['assistsX'])
+    print("Wins:", stats['winsX'])
+    print("Losses:", stats['lossesX'])
+    print("Control Wards bought:", stats['controlWardsX'])
+    print("Vision Score:", stats['visionScoreX'])
+    print("Game Duration:", stats['gameDurationX'])
 
 
 name = getSummoner()
 my_region = getRegion()
 
 me = lol_watcher.summoner.by_name(my_region, name)
-
-my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
-my_id = me['accountId']
 my_matches = lol_watcher.match.matchlist_by_account(my_region, me['accountId'])
 
-
-#csd20 = csPerMinLast10(my_region, my_matches, 1, name)
-getInput = input("How many games would you like to analyze?")
+getInput = input("How many games would you like to analyze? ")
 while(getInput.isdigit() == False):
-    getInput = input("Please enter a number")
-csd20 = statsLastX(my_region, my_matches, int(getInput), name)
+    getInput = input("Please enter a positive number ")
+gameStats = statsLastX(my_region, my_matches, int(getInput), name)
+printInfo(gameStats)
 # while(getInput != "quit"):
-print("Average stats per game for the last", getInput, "games:")
-print("damage ratio:", round(csd20['damageRatioChampsX'], 3), "%")
-print("Minions Killed:", csd20['totalCsX'])
-print("Kills:", csd20['killsX'])
-print("Deaths:", csd20['deathsX'])
-print("Assists:", csd20['assistsX'])
-print("Wins:", csd20['winsX'])
-print("Losses:", csd20['lossesX'])
-print("Control Wards bought:", csd20['controlWardsX'])
-print("Vision Score:", csd20['visionScoreX'])
+
+newInput = input("What would you like to do next?\n 'Compare' to compare to another summoner,\n 'Stats' to view stats for a different number of games, \n 'Quit' to quit the program ")
+while(newInput.lower() != "quit"):
+    if newInput.lower() == "stats":
+        gameCount = input("How many games would you like to analyze? ")
+        while(gameCount.isdigit() == False):
+            gameCount = input("Please enter a positive number ")
+        newStats = statsLastX(my_region, my_matches, int(gameCount), name)
+        printInfo(newStats)
+    else if newInput.lower() == "compare":
