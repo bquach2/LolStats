@@ -1,6 +1,6 @@
 from riotwatcher import LolWatcher, ApiError
 
-lol_watcher = LolWatcher('RGAPI-2cc993e2-7e8c-4790-9d4f-4bc94df0f256')
+lol_watcher = LolWatcher('RGAPI-aa6dd901-77cf-47b7-8d6e-2bab46744030')
 
 
 def getSummoner():
@@ -11,6 +11,13 @@ def getSummoner():
 def getRegion():
     region = input("Enter Region: ")
     return region
+
+
+def getGameCount():
+    getInput = input("How many games would you like to analyze? ")
+    while(getInput.isdigit() == False):
+        getInput = input("Please enter a positive number ")
+    return getInput
 
 
 def getIndex(my_region1, my_matches1, gameCount, userName):
@@ -167,9 +174,7 @@ my_region = getRegion()
 me = lol_watcher.summoner.by_name(my_region, name)
 my_matches = lol_watcher.match.matchlist_by_account(my_region, me['accountId'])
 
-getInput = input("How many games would you like to analyze? ")
-while(getInput.isdigit() == False):
-    getInput = input("Please enter a positive number ")
+getInput = getGameCount()
 gameStats = statsLastX(my_region, my_matches, int(getInput), name)
 printInfo(gameStats)
 # while(getInput != "quit"):
@@ -177,9 +182,21 @@ printInfo(gameStats)
 newInput = input("What would you like to do next?\n 'Compare' to compare to another summoner,\n 'Stats' to view stats for a different number of games, \n 'Quit' to quit the program ")
 while(newInput.lower() != "quit"):
     if newInput.lower() == "stats":
-        gameCount = input("How many games would you like to analyze? ")
-        while(gameCount.isdigit() == False):
-            gameCount = input("Please enter a positive number ")
+        gameCount = getGameCount()
         newStats = statsLastX(my_region, my_matches, int(gameCount), name)
         printInfo(newStats)
-    else if newInput.lower() == "compare":
+        newInput = input(
+            "What would you like to do next?\n 'Compare' to compare to another summoner,\n 'Stats' to view stats for a different number of games, \n 'Quit' to quit the program ")
+    elif newInput.lower() == "compare":
+        gameCountComp = getGameCount()
+        newName = getSummoner()
+        region = getRegion()
+        comp = lol_watcher.summoner.by_name(region, newName)
+        comp_matches = lol_watcher.match.matchlist_by_account(
+            region, comp['accountId'])
+        compStats = statsLastX(region, comp_matches,
+                               int(gameCountComp), newName)
+        printInfo(compStats)
+        newInput = input(
+            "What would you like to do next?\n 'Compare' to compare to another summoner,\n 'Stats' to view stats for a different number of games, \n 'Quit' to quit the program ")
+print("Thank you for using LoLStats. Hope you enjoyed your stay")
