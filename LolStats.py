@@ -1,6 +1,6 @@
 from riotwatcher import LolWatcher, ApiError
 
-lol_watcher = LolWatcher('RGAPI-0d833bc7-7687-4126-8c8e-bab2bbed4431')
+lol_watcher = LolWatcher('RGAPI-0d833bc7-7687-4126-8c8e-XXXXXXXXXXXX')
 
 
 def getSummoner():
